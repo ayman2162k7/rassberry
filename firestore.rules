@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function me() { return request.auth != null; }
+    match /usernames/{n} {
+      allow read: if me();
+      allow create: if me() && n.matches('^[a-z0-9_]{3,20}$') && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+    }
+    match /users/{u} {
+      allow read: if me();
+      allow create: if me() && u == request.auth.uid
+        && request.resource.data.username.matches('^[a-z0-9_]{3,20}$')
+        && getAfter(/databases/$(db)/documents/usernames/$(request.resource.data.username)).data.uid == u;
+      allow update: if me() && u == request.auth.uid && request.resource.data.username == resource.data.username;
+    }
+    match /chats/{c} {
+      allow read: if me() && request.auth.uid in resource.data.members;
+      allow create: if me() && request.auth.uid in request.resource.data.members
+        && request.resource.data.members.size() == 2
+        && c == request.resource.data.members[0] + '_' + request.resource.data.members[1];
+      allow update: if me() && request.auth.uid in resource.data.members && request.resource.data.members == resource.data.members;
+      match /msgs/{m} {
+        allow read: if me() && request.auth.uid in c.split('_');
+        allow create: if me() && request.auth.uid in c.split('_') && request.resource.data.from == request.auth.uid;
+        allow update: if me() && request.auth.uid in c.split('_') && (
+          (resource.data.from == request.auth.uid && request.resource.data.from == resource.data.from)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']));
+      }
+      match /cand/{i} {
+        allow read, create: if me() && request.auth.uid in c.split('_');
+      }
+    }
+    match /calls/{c} {
+      allow read: if me() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+      allow write: if me() && request.auth.uid in c.split('_');
+    }
+  }
+}
