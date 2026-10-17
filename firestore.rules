@@ -5,13 +5,17 @@ service cloud.firestore {
     match /usernames/{n} {
       allow read: if me();
       allow create: if me() && n.matches('^[a-z0-9_]{3,20}$') && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+      allow delete: if me() && resource.data.uid == request.auth.uid;
     }
     match /users/{u} {
       allow read: if me();
       allow create: if me() && u == request.auth.uid
         && request.resource.data.username.matches('^[a-z0-9_]{3,20}$')
         && getAfter(/databases/$(db)/documents/usernames/$(request.resource.data.username)).data.uid == u;
-      allow update: if me() && u == request.auth.uid && request.resource.data.username == resource.data.username;
+      allow update: if me() && u == request.auth.uid && (request.resource.data.username == resource.data.username
+        || getAfter(/databases/$(db)/documents/usernames/$(request.resource.data.username)).data.uid == u);
+      allow delete: if me() && u == request.auth.uid;
+      match /{document=**} { allow read, write: if me() && u == request.auth.uid; }
     }
     match /chats/{c} {
       allow read: if me() && request.auth.uid in resource.data.members;
@@ -24,11 +28,10 @@ service cloud.firestore {
         allow create: if me() && request.auth.uid in c.split('_') && request.resource.data.from == request.auth.uid;
         allow update: if me() && request.auth.uid in c.split('_') && (
           (resource.data.from == request.auth.uid && request.resource.data.from == resource.data.from)
-          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']));
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reacts','pinned','readBy']));
+        allow delete: if me() && resource.data.from == request.auth.uid;
       }
-      match /cand/{i} {
-        allow read, create: if me() && request.auth.uid in c.split('_');
-      }
+      match /cand/{i} { allow read, create: if me() && request.auth.uid in c.split('_'); }
     }
     match /calls/{c} {
       allow read: if me() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);

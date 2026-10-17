@@ -22,3 +22,8 @@ Open the site, sign in, pick a unique username. Add friends by searching their u
 - Calls use a public STUN server. Behind strict networks/mobile carriers add a TURN server in `firebase-config.js` (`iceServers`).
 - Security comes from `firestore.rules`: only chat members read a chat, only authors edit/delete their messages. Messages are not end-to-end encrypted (you, as project owner, can read the database).
 - Free-tier limits: ~50k reads / 20k writes per day.
+
+## v2 update
+Replace `app.js`, `style.css` and `firestore.rules` with the new versions, then **republish the rules** in Firebase (Firestore > Rules > Publish) and redeploy. New users/prefs live in `users/{uid}/private`, so the new rules are required.
+Privacy/blocking toggles are enforced by the app (client side); they hide data in the UI but are not server-enforced.
+Not included yet: group chats and group calls, SMS/TOTP two-factor, large video upload (needs external storage such as Cloudinary).
