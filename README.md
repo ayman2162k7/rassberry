@@ -27,3 +27,9 @@ Open the site, sign in, pick a unique username. Add friends by searching their u
 Replace `app.js`, `style.css` and `firestore.rules` with the new versions, then **republish the rules** in Firebase (Firestore > Rules > Publish) and redeploy. New users/prefs live in `users/{uid}/private`, so the new rules are required.
 Privacy/blocking toggles are enforced by the app (client side); they hide data in the UI but are not server-enforced.
 Not included yet: group chats and group calls, SMS/TOTP two-factor, large video upload (needs external storage such as Cloudinary).
+
+## v3 UI update
+Replace `app.js`, `style.css`, `index.html` and add the new `icons.js` (Lucide icons, ISC licence). `firestore.rules` is unchanged, so no need to republish rules.
+
+## Upgrading the live v1 site without losing data
+Deploy these files to the SAME Vercel project and keep the SAME Firebase project (`firebase-config.js` of v1 - do not overwrite it). Users sign in with the same Google account, so they keep their UID, friends and chats. Then publish `firestore.rules` in that Firebase project. To ship future updates, bump `APP_VERSION` in `app.js` and `version.json` together: open tabs show an "Update now" banner.
